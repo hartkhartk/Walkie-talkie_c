@@ -12,6 +12,16 @@
 
 #define DEVICE_NAME             "WT-PRO"
 #define FIRMWARE_VERSION        "1.0.0"
+#define BUILD_INFO              "2024-12-07 (dev)"
+
+// Build type
+#ifdef RELEASE_BUILD
+    #define BUILD_TYPE          "release"
+#elif defined(DEBUG_BUILD)
+    #define BUILD_TYPE          "debug"
+#else
+    #define BUILD_TYPE          "dev"
+#endif
 #define DEVICE_ID_LENGTH        8       // 8 digits (numbers only, 0-9)
 #define FREQUENCY_ID_LENGTH     8       // 8 digits (numbers only, 0-9)
 
@@ -78,6 +88,12 @@
 // Battery
 #define PIN_BATTERY_ADC         38      // Battery voltage ADC
 #define PIN_CHARGE_STATUS       1       // Charging indicator
+
+// SD Card
+#define PIN_SD_CS               4       // SD Card Chip Select
+#define PIN_SD_MOSI             23      // Shared with SPI
+#define PIN_SD_MISO             19      // Shared with SPI
+#define PIN_SD_SCK              18      // Shared with SPI
 
 // =============================================================================
 // Timing Constants (ms)

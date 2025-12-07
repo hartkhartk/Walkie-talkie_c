@@ -16,8 +16,11 @@
 #include "core/device_state.h"
 #include "core/dial_manager.h"
 #include "core/audio_buffer.h"
+#include "core/device_id.h"
 #include "comm/protocol.h"
 #include "comm/radio.h"
+#include "hal/storage.h"
+#include "hal/usb_cdc.h"
 
 // =============================================================================
 // Platform-Specific Includes
@@ -247,7 +250,8 @@ static void on_protocol_message(message_type_t type, const char* src_id,
 // =============================================================================
 
 static void init_system(void) {
-    LOG_INFO("Initializing Walkie-Talkie v%s", FIRMWARE_VERSION);
+    LOG_INFO("Initializing Walkie-Talkie v%s (%s)", FIRMWARE_VERSION, BUILD_TYPE);
+    LOG_INFO("Build: %s", BUILD_INFO);
     
 #ifdef ESP32
     // Initialize NVS
@@ -258,6 +262,18 @@ static void init_system(void) {
     }
     ESP_ERROR_CHECK(ret);
 #endif
+    
+    // Initialize device ID (unique identifier)
+    LOG_INFO("Initializing device ID...");
+    device_id_init();
+    
+    // Initialize storage (SD/SPIFFS)
+    LOG_INFO("Initializing storage...");
+    storage_init();
+    
+    // Initialize USB CDC
+    LOG_INFO("Initializing USB...");
+    usb_init(USB_MODE_CDC);
     
     // Initialize HAL
     LOG_INFO("Initializing HAL...");
@@ -290,7 +306,11 @@ static void init_system(void) {
     // Initialize device state
     device_init(&g_device_ctx);
     
-    // Set device ID in protocol layer
+    // Get unique device ID and set in protocol layer
+    char device_id_str[16];
+    device_id_get_string(device_id_str, sizeof(device_id_str));
+    strncpy(g_device_ctx.device_id, device_id_str, DEVICE_ID_LENGTH);
+    g_device_ctx.device_id[DEVICE_ID_LENGTH] = '\0';
     protocol_set_device_id(g_device_ctx.device_id);
     
     // Initialize dial manager (15 positions with thread management)
@@ -389,6 +409,9 @@ static void main_loop(void) {
         
         // Handle audio playback
         handle_audio_playback();
+        
+        // Handle USB communication
+        usb_update();
         
         // Small delay to prevent CPU hogging
         DELAY_MS(10);
